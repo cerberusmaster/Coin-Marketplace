@@ -12,5 +12,7 @@ export const APP_ROUTES = {
   HOME: '/',
   PROFILE: '/profile',
   CRYPTO_RANKING: '/ranking',
-  SOCKETIO: '/socketio',
 };
+
+export const CRYPTO_API_CALL_PERIOD = 3000;
+export const CRYPTO_API_TOKEN_COUNT = 10;

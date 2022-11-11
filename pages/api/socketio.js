@@ -1,5 +1,6 @@
 import { Server } from 'socket.io'
 import axios from 'axios';
+import { CRYPTO_API_CALL_PERIOD, CRYPTO_API_TOKEN_COUNT } from '../../utils/constants';
 
 const COINMARKETCAP_API = {
     cryptocurrencyCategories: () => {
@@ -19,8 +20,7 @@ const COINMARKETCAP_API = {
     cryptocurrencyListingsLatest: () => {
         return new Promise(async (resolve, reject) => {
             try {
-                const limit = 10;
-                let response = await axios.get(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=${10}`, {
+                let response = await axios.get(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=${CRYPTO_API_TOKEN_COUNT}`, {
                     headers: {
                         'X-CMC_PRO_API_KEY': process.env.COINMARKETCAP_API_KEY,
                     },
@@ -33,41 +33,42 @@ const COINMARKETCAP_API = {
     },
 }
 
+const refreshCurrencyListLatest = (io) => {
+    COINMARKETCAP_API.cryptocurrencyListingsLatest().then((res) => {
+        const ret = []
+        res.data?.map(item => {
+            ret.push({
+                id: item.id,
+                name: item.name,
+                symbol: item.symbol,
+                price: item.quote.USD.price.toFixed(2),
+                volume: item.quote.USD.volume_24h.toFixed(0),
+                market_cap: item.quote.USD.market_cap.toFixed(0)
+            })
+        })
+        io.emit('refresh', ret);
+    }).catch(console.log);
+}
+
 const ioHandler = (req, res) => {
-    console.log("socketio api ...");
+    // socketio api ...
     if (!res.socket.server.io) {
-        console.log('socket.io initialized...')
+        // socket.io initialized...
         const io = new Server(res.socket.server)
 
-        // setInterval(() => {
-        //     io.emit('broadcast', Math.random().toString());
-        // }, 1000)
+        setInterval(() => {
+            io.emit('broadcast', (Math.random() * 1000000).toFixed(0).toString());
+            refreshCurrencyListLatest(io);
+        }, CRYPTO_API_CALL_PERIOD)
 
         io.on('connection', socket => {
-            // socket.broadcast.emit('a user connected')
-            // socket.emit('request', /* … */); // emit an event to the socket
-            // io.emit('broadcast', /* … */); // emit an event to all connected sockets
-            // socket.on('reply', () => { /* … */ }); // listen to the event
-
-            // socket.on('hello', msg => {
-            //     socket.emit('hello', 'world!')
-            // })
-            // socket.on('event', data => { /* … */ });
-            // socket.on('disconnect', () => { /* … */ });
-
             socket.on('fetch', () => {
-                console.log("fetching...");
-                // COINMARKETCAP_API.cryptocurrencyCategories().then((res) => {
-                //     console.log(res)
-                // }).catch(console.log);
-                COINMARKETCAP_API.cryptocurrencyListingsLatest().then((res) => {
-                    socket.emit('refresh', res);
-                }).catch(console.log);
+                refreshCurrencyListLatest(io);
             })
         });
         res.socket.server.io = io
     } else {
-        console.log('socket.io already running')
+        // socket.io already running
     }
     res.end()
 }

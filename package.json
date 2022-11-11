@@ -16,7 +16,9 @@
     "iron-session": "^6.0.5",
     "jsonwebtoken": "^8.5.1",
     "next": "12.1.0",
+    "primereact": "^8.7.2",
     "react": "17.0.2",
+    "react-bootstrap": "^2.6.0",
     "react-dom": "17.0.2",
     "socket.io": "^4.5.3",
     "socket.io-client": "^4.5.3"
